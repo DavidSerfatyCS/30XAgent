@@ -1,18 +1,28 @@
 """
-Agente de Onboarding 30X — interfaz conversacional.
+Agente de Onboarding 30X - interfaz conversacional.
 
-- RF-01 (grounding): responde solo desde knowledge_base.md vía system prompt.
-- RF-02 (memoria): Gradio pasa el historial de la sesión en cada turno; se reenvía al modelo.
+- RF-01 (grounding): responde solo desde knowledge_base.md via system prompt.
+- RF-02 (memoria): Gradio pasa el historial de la sesion en cada turno; se reenvia al modelo.
 - RF-03 (escalado): regla en el system prompt.
-- RF-04 (interfaz): chat web usable por un no-técnico, sin instrucciones.
+- RF-04 (interfaz): chat web usable por un no-tecnico, sin instrucciones.
 
 Config por variables de entorno (ver .env.example):
 - ANTHROPIC_API_KEY : credencial del modelo (NUNCA se commitea).
 - MODEL             : id del modelo. Default: Claude Haiku (barato, suficiente).
+- PORT              : puerto del servidor (lo setean hosts como Render). Default 7860.
 """
 
 import os
 from pathlib import Path
+
+# Carga un archivo .env si existe y si python-dotenv esta instalado (opcional).
+# Si no esta, no pasa nada: la key se toma igual de las variables de entorno del sistema.
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except ImportError:
+    pass
 
 import gradio as gr
 
@@ -26,7 +36,7 @@ KNOWLEDGE_BASE = (BASE_DIR / "knowledge_base.md").read_text(encoding="utf-8")
 
 SYSTEM = (
     f"{SYSTEM_PROMPT}\n\n"
-    "===== BASE DE CONOCIMIENTO (única fuente de verdad) =====\n"
+    "===== BASE DE CONOCIMIENTO (unica fuente de verdad) =====\n"
     f"{KNOWLEDGE_BASE}"
 )
 
@@ -42,8 +52,8 @@ def get_client():
         api_key = os.environ.get("ANTHROPIC_API_KEY")
         if not api_key:
             raise RuntimeError(
-                "Falta ANTHROPIC_API_KEY. Copiá .env.example a .env y poné tu key, "
-                "o exportá la variable de entorno."
+                "Falta ANTHROPIC_API_KEY. Copia .env.example a .env y pone tu key, "
+                "o exporta la variable de entorno."
             )
         _client = Anthropic(api_key=api_key)
     return _client
@@ -52,21 +62,30 @@ def get_client():
 def respond(message, history):
     """
     message: texto del usuario en este turno.
-    history: lista de dicts {'role': 'user'|'assistant', 'content': str} de la sesión.
-             Esto ES la memoria de conversación (RF-02): se reenvía completo al modelo.
+    history: lista de dicts {'role', 'content'} de la sesion = memoria (RF-02).
     """
+    if not message or not message.strip():
+        return "Escribi tu pregunta sobre 30X y te respondo con los documentos de onboarding."
+
     messages = [{"role": m["role"], "content": m["content"]} for m in history]
     messages.append({"role": "user", "content": message})
 
     model = os.environ.get("MODEL", DEFAULT_MODEL)
-    client = get_client()
-    resp = client.messages.create(
-        model=model,
-        max_tokens=MAX_TOKENS,
-        system=SYSTEM,
-        messages=messages,
-    )
-    return resp.content[0].text
+    try:
+        client = get_client()
+        resp = client.messages.create(
+            model=model,
+            max_tokens=MAX_TOKENS,
+            system=SYSTEM,
+            messages=messages,
+        )
+        return resp.content[0].text
+    except Exception as exc:  # noqa: BLE001 - el usuario no debe ver un stacktrace (RF-04)
+        print(f"[error] fallo al llamar al modelo: {exc}")
+        return (
+            "Tuve un problema tecnico para responder ahora. Proba de nuevo en unos segundos. "
+            "Si el problema persiste, avisa al equipo tecnico de 30X."
+        )
 
 
 demo = gr.ChatInterface(
@@ -87,4 +106,9 @@ demo = gr.ChatInterface(
 )
 
 if __name__ == "__main__":
-    demo.launch()
+    # server_name 0.0.0.0 + PORT por env => corre en local y en hosts como Render.
+    # (Hugging Face Spaces ejecuta la app sola; estos valores no le molestan.)
+    demo.launch(
+        server_name="0.0.0.0",
+        server_port=int(os.environ.get("PORT", 7860)),
+    )
