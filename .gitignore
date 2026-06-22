@@ -1,0 +1,10 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+venv/
+.gradio/
+
+# Documentos internos de 30X marcados "Confidencial": no se redistribuyen en el repo.
+# La KB procesada (knowledge_base.md) si se incluye porque el deploy la necesita. Ver GAPS.md.
+30X_*.pdf
