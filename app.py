@@ -145,10 +145,14 @@ def respond(message, history, request: gr.Request = None):
 # ============================================================================
 # Interfaz (UI). SOLO presentacion: no cambia respond(), la memoria ni los
 # guardrails. El gr.ChatInterface sigue manejando el chat y la memoria de
-# sesion; se embebe dentro de un gr.Blocks que aporta el branding 30X
-# (negro + lima). El CSS se inyecta como <style> (robusto en HF Spaces, sin
-# depender de quien llame a launch()).
+# sesion; se embebe dentro de un gr.Blocks que aporta el branding 30X.
+# Paleta integrada (negro + lima): se sobreescriben las variables CSS de
+# Gradio para que todos los componentes (chat, tarjetas, historial) compartan
+# el mismo fondo oscuro y el azul por defecto desaparezca. El CSS va como
+# <style> (robusto en HF Spaces, sin depender de quien llame a launch()).
 # ============================================================================
+
+HEADER_TITLE = "Agente de Onboarding"
 
 EXAMPLES = [
     "¿Qué es 30X y quiénes lo fundaron?",
@@ -175,48 +179,73 @@ LOGO_PATH = str(BASE_DIR / "logo.jpeg") if LOGO_URI else None
 
 CSS = """
 :root {
-  --ob-bg:#0a0a0a; --ob-panel:#161616; --ob-border:#2a2a2a;
-  --ob-acc:__ACCENT__; --ob-text:#ededed; --ob-muted:#9a9a9a;
+  --ob-bg:#0a0a0a; --ob-panel:#161616; --ob-border:#262626;
+  --ob-acc:__ACCENT__; --ob-text:#f0f0f0; --ob-muted:#a3a3a3;
 }
+
+/* Paleta integrada: pisa las variables de Gradio para que nada quede azul
+   y todo comparta el fondo oscuro con acento lima. */
+gradio-app, .gradio-container, .dark {
+  --background-fill-primary:#0a0a0a !important;
+  --background-fill-secondary:#121212 !important;
+  --body-background-fill:#0a0a0a !important;
+  --block-background-fill:#121212 !important;
+  --panel-background-fill:#121212 !important;
+  --border-color-primary:#262626 !important;
+  --border-color-accent:#2c2c2c !important;
+  --input-background-fill:#141414 !important;
+  --input-background-fill-focus:#171717 !important;
+  --color-accent:__ACCENT__ !important;
+  --color-accent-soft:#1d1f17 !important;
+  --button-primary-background-fill:__ACCENT__ !important;
+  --button-primary-background-fill-hover:#b6e62f !important;
+  --button-primary-text-color:#000 !important;
+}
+
 gradio-app, .gradio-container {
   background:var(--ob-bg) !important; color:var(--ob-text) !important;
-  max-width:100% !important; padding:0 !important;
+  max-width:100% !important; padding:0 !important; font-size:16px !important;
 }
 footer { display:none !important; }
 
 #ob-topbar {
-  display:flex; align-items:center; justify-content:space-between;
-  padding:14px 28px; border-bottom:1px solid var(--ob-border); background:#000;
+  display:flex; align-items:center; justify-content:flex-start;
+  padding:16px 28px; border-bottom:1px solid var(--ob-border); background:#000;
 }
-#ob-topbar img.ob-logo { height:28px; display:block; }
-#ob-topbar span.ob-logo { font-weight:800; font-size:22px; letter-spacing:1px; }
+#ob-topbar .ob-brand { display:flex; align-items:center; gap:16px; }
+#ob-topbar img.ob-logo { height:40px; display:block; }
+#ob-topbar span.ob-logo { font-weight:800; font-size:30px; letter-spacing:1px; }
 #ob-topbar span.ob-logo b { color:var(--ob-acc); }
-#ob-topbar .ob-pill {
-  font-size:12px; color:var(--ob-acc); border:1px solid var(--ob-border);
-  border-radius:999px; padding:6px 12px; display:inline-flex; gap:8px; align-items:center;
-}
-#ob-topbar .ob-pill::before {
-  content:""; width:7px; height:7px; border-radius:50%; background:var(--ob-acc);
+#ob-topbar .ob-title {
+  font-size:19px; font-weight:600; color:var(--ob-text); letter-spacing:.3px;
+  padding-left:16px; border-left:1px solid var(--ob-border);
 }
 
-#ob-main { max-width:960px; margin:0 auto; padding:20px 20px 40px; }
+#ob-main { max-width:960px; margin:0 auto; padding:22px 20px 40px; }
 
 .ob-welcome {
   background:var(--ob-panel); border:1px solid var(--ob-border);
-  border-radius:16px; padding:22px 24px; margin:6px 0 12px;
+  border-radius:16px; padding:24px 26px; margin:6px 0 14px;
 }
-.ob-welcome h2 { margin:0 0 6px; font-size:22px; color:var(--ob-text); }
-.ob-welcome p { margin:4px 0; color:#d6d6d6; }
-.ob-welcome ul { list-style:none; padding:0; margin:12px 0 4px; }
-.ob-welcome li { padding:5px 0 5px 26px; position:relative; color:#d6d6d6; }
+.ob-welcome h2 { margin:0 0 8px; font-size:25px; font-weight:700; color:var(--ob-text); }
+.ob-welcome p { margin:6px 0; font-size:16px; color:#e2e2e2; }
+.ob-welcome ul { list-style:none; padding:0; margin:14px 0 4px; }
+.ob-welcome li {
+  padding:6px 0 6px 28px; position:relative; font-size:16px; font-weight:500; color:#e2e2e2;
+}
 .ob-welcome li::before {
-  content:"✓"; color:var(--ob-acc); position:absolute; left:0; font-weight:700;
+  content:"✓"; color:var(--ob-acc); position:absolute; left:0; font-weight:800; font-size:17px;
 }
-.ob-welcome .ob-muted { color:var(--ob-muted); font-size:14px; margin-top:10px; }
+.ob-welcome .ob-muted { color:var(--ob-muted); font-size:14.5px; margin-top:12px; }
+
+/* Texto del chat un poco mas grande y vivo (selectores conservadores) */
+#ob-main .message, #ob-main .bubble, #ob-main .message-row,
+#ob-main [data-testid="bot"], #ob-main [data-testid="user"] {
+  font-size:15.5px !important; line-height:1.6 !important;
+}
 
 #ob-main textarea, #ob-main input[type=text] {
-  background:#121212 !important; color:var(--ob-text) !important;
-  border:1px solid var(--ob-border) !important; border-radius:12px !important;
+  color:var(--ob-text) !important; border-radius:12px !important; font-size:15.5px !important;
 }
 #ob-main button.primary, #ob-main .primary {
   background:var(--ob-acc) !important; color:#000 !important;
@@ -225,6 +254,7 @@ footer { display:none !important; }
 #ob-main .examples button, #ob-main .example {
   background:var(--ob-panel) !important; border:1px solid var(--ob-border) !important;
   color:var(--ob-text) !important; border-radius:14px !important; text-align:left !important;
+  font-size:15px !important; font-weight:500 !important;
 }
 #ob-main .examples button:hover, #ob-main .example:hover {
   border-color:var(--ob-acc) !important;
@@ -237,16 +267,15 @@ footer { display:none !important; }
 #ob-footer b { color:var(--ob-text); }
 """.replace("__ACCENT__", ACCENT)
 
-_logo_html = (
-    f'<img class="ob-logo" src="{LOGO_URI}" alt="30X">'
-    if LOGO_URI
-    else '<span class="ob-logo">30<b>X</b></span>'
-)
+if LOGO_URI:
+    _brand_inner = f'<img class="ob-logo" src="{LOGO_URI}" alt="30X">'
+else:
+    _brand_inner = '<span class="ob-logo">30<b>X</b></span>'
 TOPBAR = (
-    '<div id="ob-topbar">'
-    f"{_logo_html}"
-    '<span class="ob-pill">Responde solo con documentos internos</span>'
-    "</div>"
+    '<div id="ob-topbar"><div class="ob-brand">'
+    f"{_brand_inner}"
+    f'<span class="ob-title">{HEADER_TITLE}</span>'
+    "</div></div>"
 )
 
 WELCOME = (
@@ -258,8 +287,7 @@ WELCOME = (
     "<li>Las herramientas que usás cada día.</li>"
     "<li>Los programas y qué esperar en tu primera semana.</li>"
     "</ul>"
-    '<p class="ob-muted">Probá una de las preguntas frecuentes o escribime lo que necesites. '
-    "Si algo no está en los documentos, te lo digo.</p>"
+    '<p class="ob-muted">Probá una de las preguntas frecuentes o escribime lo que necesites.</p>'
     "</div>"
 )
 
@@ -270,6 +298,7 @@ FOOTER = (
 
 THEME = gr.themes.Base(
     primary_hue=gr.themes.colors.lime,
+    secondary_hue=gr.themes.colors.gray,
     neutral_hue=gr.themes.colors.gray,
 )
 
@@ -287,6 +316,7 @@ with gr.Blocks(title="Agente de Onboarding 30X") as demo:
             fn=respond,
             chatbot=chatbot,
             examples=EXAMPLES,
+            save_history=True,
         )
     gr.HTML(FOOTER)
 
