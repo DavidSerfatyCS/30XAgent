@@ -317,6 +317,7 @@ with gr.Blocks(title="Agente de Onboarding 30X") as demo:
             chatbot=chatbot,
             examples=EXAMPLES,
             save_history=True,
+            autofocus=False,
         )
     gr.HTML(FOOTER)
 
