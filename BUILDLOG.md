@@ -23,9 +23,29 @@
   da máxima capacidad con mínimo esfuerzo de infra. Haiku alcanza para grounding sobre 17 KB; elegir
   el modelo barato a propósito demuestra criterio de costo. Key y modelo por variable de entorno.
 
+- **Por qué Haiku y no un modelo aún más barato (ej. Gemini Flash-Lite) ni una capa multi-proveedor.**
+  Para la demo el costo es despreciable (centavos), así que la diferencia de precio entre modelos no
+  decide nada acá; prioricé confiabilidad y seguimiento de instrucciones en español, donde Haiku ya
+  validó 11/11. Un modelo más barato tiene sentido a escala/producción, no en una prueba evaluada.
+  Y NO construí una capa de abstracción multi-proveedor (switch Anthropic/Gemini): nadie la pidió y
+  sería flexibilidad especulativa — la misma trampa de over-engineering que RAG/Next.js. La
+  portabilidad ya está dada gratis: la llamada al modelo está aislada en `get_client()` y `respond()`
+  (app.py), así que cambiar de proveedor sería un cambio acotado a esas funciones + re-testear, sin
+  reescribir grounding, memoria ni escalado.
+  _(Ángulo video: la jugada senior no es construir el switch a Gemini, es NO construirlo y explicar
+  por qué. Ojo: cualquier frase tipo "elegí RAG" sería falsa — usamos full-context.)_
+
 - **Interfaz: Gradio (ChatInterface) sobre Next.js.** Gradio trae chat + memoria de sesión + estados
   de carga casi gratis (RF-02, RF-04). Next.js/TS habría gastado ~10 h en plumbing de UI que el brief
   dice que no necesita ser linda; ese tiempo va al video.
+
+- **Guardrails livianos para un deploy público (más de lo que pide el brief, por criterio).** Como
+  el Space corre con una API key propia, agregamos tope de longitud de entrada, rate limit por
+  IP/sesión (en memoria, degradable a global) y un bloqueo explícito de uso como LLM general. NO
+  pusimos auth/Redis/CAPTCHA: sería sobre-ingeniería para una demo. Umbrales por env var para poder
+  relajarlos durante el red-team.
+  _(Ángulo video: pensar los vectores de abuso —agotar la API, usar el bot como ChatGPT gratis— y
+  mitigarlos con lo mínimo razonable, sin sobre-construir.)_
 
 ## 2. Cómo usamos AI para construir
 

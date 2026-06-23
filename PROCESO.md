@@ -71,6 +71,12 @@ Estados: [ ] pendiente · [~] en progreso · [x] hecho · [!] bloqueado
 ### Fase 1 — Núcleo de grounding — [x]  (dry-run de las 8 preguntas OK; Checkpoint 2 aprobado)
 ### Fase 2 — Memoria + interfaz — [x]  (Gradio + history; test de memoria pasa; Checkpoint 3 mostrado)
 ### Fase 2.5 — Injertos del plan alternativo — [x]  (anti-injection + TESTING.md + GAPS.md + tests)
+### Fase 2.6 — Seguridad / guardrails — [x]
+- [x] app.py: tope de input + rate limit por IP/sesión (env-configurable) + bloqueo off-topic en prompt
+- [x] tests/test_security.py (rate-limit, input cap, reglas del prompt) — pasa
+- [x] Reparado system_prompt.md (estaba truncado: faltaban Estilo y "Qué NO haces")
+- [x] Batería adversarial S1–S8 documentada en TESTING.md
+- [ ] Red-team en vivo (20–30 preguntas) contra el Space — pendiente, lo corre Claude vía gradio_client
 
 ### Fase 3 — Deploy — [~] (preparado; falta ejecutar)
 - [x] app.py prod-ready: manejo de errores (no stacktrace al usuario), guarda input vacío, server 0.0.0.0 + PORT
@@ -102,6 +108,8 @@ Todo documentado en `README.md`. Resumen: `pip install -r requirements.txt`, key
 1. **API key de Anthropic** cargada en el host (no en el repo) — destraba deploy y test en vivo.
 2. **Elegir host:** Hugging Face Spaces (recomendado para Gradio) o Render (hay render.yaml).
 3. **Commit/push** de los archivos nuevos de esta sesión (ver comandos que paso aparte).
+   - Re-subir al Space (cambiaron desde la última subida): app.py, requirements.txt, system_prompt.md.
+   - En el README del Space: sdk_version: 6.5.1.
 4. Respuesta de 30X a las 2 preguntas (Amo las envía): dueño de escalado técnico + quién pone la key.
 
 ## 9. Estado de los tests (todos offline, sin API)

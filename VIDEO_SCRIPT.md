@@ -33,6 +33,27 @@ El corazón del video. Mostrá criterio, no herramientas.
   alcanza. Gastar en Opus sería un cañón para una mosca. Elegir el modelo barato es criterio de
   costo, no falta de recursos."
 
+**Párrafo pulido — full-context vs RAG (para decirlo casi tal cual):**
+"Para esta versión elegí pasar los tres documentos completos al modelo en cada consulta
+—full-context— en vez de montar un RAG con embeddings. El motivo es el tamaño: los tres PDFs juntos
+son ~17 KB, entran de sobra en el contexto. Con tan poco, RAG no suma precisión: suma un punto de
+falla, porque si el retriever no trae el fragmento correcto, el agente diría 'no sé' sobre algo que
+sí está en los documentos. Full-context elimina ese riesgo y es lo más simple de defender en 48
+horas. La contra, y la digo de frente: no escala —el costo crece con cada documento y cada mensaje.
+Por eso, si 30X sumara muchos más documentos, conectara Notion o Drive, o necesitara que distintos
+usuarios vean distinta documentación, ahí migraría a RAG. Hoy no hace falta, y construirlo ahora
+sería resolver un problema que el proyecto todavía no tiene."
+
+Cuándo migraría a RAG (lista corta, por si lo preguntan):
+- La base pasa de 3 a ~10+ documentos, o el contexto se vuelve caro/lento.
+- Hay que conectar fuentes externas (Notion, Drive, SOPs, políticas internas).
+- Distintos usuarios deben ver distinta documentación (control de acceso por usuario).
+- El volumen de mensajes hace que el costo por token empiece a pesar.
+
+Nota honesta para no contradecir el código: la migración NO está pre-construida. Lo que la hace
+barata es que la KB (knowledge_base.md) está desacoplada del resto, así que pasar a RAG cambia cómo
+se alimenta esa KB, sin tocar grounding, memoria ni escalado.
+
 ### 2:30–3:30 · Cómo usé AI para construir (meta, y honesto)
 "30X es AI-first, así que esto importa. No solo le pedí código a un modelo: generé un plan
 alternativo con ChatGPT — proponía RAG, Next.js, TypeScript — y lo *comparé* contra el mío. Tomé lo

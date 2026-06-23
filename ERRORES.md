@@ -55,3 +55,29 @@
 - **Cómo lo resolvimos:** Rename al `.env` real (sin extensión). Tras eso queda ignorado por git y
   `load_dotenv` lo carga.
 - **Aprendizaje:** En Windows, activar "ver extensiones de archivo"; `.env` no debe terminar en `.txt`.
+
+### 2026-06-23 — HF Spaces fuerza gradio 6.5.1 (no acepta 5.x): adaptamos el código a v6
+- **Qué intentábamos:** Deployar en Hugging Face Spaces. Habíamos pineado `gradio>=5,<6` porque la
+  6.x eliminó `type=` en ChatInterface.
+- **Qué falló / síntoma:** (1) El build de HF instala `gradio==6.5.1` (su default) y choca con
+  `gradio<6` → ResolutionImpossible. (2) Setear `sdk_version: 5.50.1` en el Space dio "Gradio
+  version does not exist": HF solo acepta versiones de su lista curada, distinta de PyPI.
+- **Causa raíz:** En HF la versión de Gradio la fija `sdk_version` del README del Space, no
+  requirements; y su lista de versiones soportadas es acotada.
+- **Cómo lo resolvimos:** En vez de pelear por una 5.x soportada, adaptamos a gradio 6 (la que HF ya
+  eligió): quitamos `type="messages"` de ChatInterface (en v6 el formato messages es el default) y
+  pusimos `gradio>=6,<7`. Verificado en sandbox: v6 pasa el historial como `{"role","content"}`,
+  idéntico a lo que `respond()` ya espera; py_compile + tests OK.
+- **Aprendizaje:** En HF Spaces, alinear el código con la `sdk_version` soportada por la plataforma
+  en vez de imponer una versión por requirements.
+
+### 2026-06-23 — system_prompt.md estaba truncado en disco (faltaban Estilo y "Qué NO haces")
+- **Qué intentábamos:** Endurecer el system prompt contra uso como LLM general.
+- **Qué falló / síntoma:** Al editar, el archivo terminaba en "## Es": faltaban las secciones
+  Estilo y "Qué NO haces" (las reglas de grounding, anti-inyección y escalado SÍ estaban).
+- **Causa raíz:** El mismo truncamiento de escritura del entorno que ya nos pasó con app.py,
+  ocurrido en alguna edición previa sin que se notara.
+- **Cómo lo resolvimos:** Reescribir el prompt completo por shell (heredoc) con todas las secciones
+  + el endurecimiento nuevo. `test_prompt_and_kb.py` y `test_security.py` confirman invariantes.
+- **Aprendizaje:** Los tests de invariantes del prompt deberían chequear TODAS las secciones clave,
+  no solo algunas; un archivo de prompt truncado es un fallo silencioso peligroso.
