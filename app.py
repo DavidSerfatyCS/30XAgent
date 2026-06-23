@@ -6,17 +6,28 @@ Agente de Onboarding 30X - interfaz conversacional.
 - RF-03 (escalado): regla en el system prompt.
 - RF-04 (interfaz): chat web usable por un no-tecnico, sin instrucciones.
 
+Guardrails (deploy publico con key propia -> protegen el gasto y evitan abuso):
+- Tope de longitud de entrada (MAX_INPUT_CHARS).
+- Rate limit por IP/sesion (RATE_LIMIT_MAX por RATE_LIMIT_WINDOW_SEC); degrada a global si no hay IP.
+- max_tokens acota el costo de salida por llamada.
+
 Config por variables de entorno (ver .env.example):
-- ANTHROPIC_API_KEY : credencial del modelo (NUNCA se commitea).
-- MODEL             : id del modelo. Default: Claude Haiku (barato, suficiente).
-- PORT              : puerto del servidor (lo setean hosts como Render). Default 7860.
+- ANTHROPIC_API_KEY     : credencial del modelo (NUNCA se commitea).
+- MODEL                 : id del modelo. Default: Claude Haiku.
+- PORT                  : puerto del servidor. Default 7860.
+- MAX_INPUT_CHARS       : tope de caracteres por mensaje. Default 2000.
+- RATE_LIMIT_MAX        : consultas permitidas por ventana. Default 15.
+- RATE_LIMIT_WINDOW_SEC : ventana del rate limit en segundos. Default 300.
 """
 
+from __future__ import annotations
+
 import os
+import time
+from collections import defaultdict, deque
 from pathlib import Path
 
 # Carga un archivo .env si existe y si python-dotenv esta instalado (opcional).
-# Si no esta, no pasa nada: la key se toma igual de las variables de entorno del sistema.
 try:
     from dotenv import load_dotenv
 
@@ -30,6 +41,10 @@ BASE_DIR = Path(__file__).resolve().parent
 DEFAULT_MODEL = "claude-haiku-4-5-20251001"
 MAX_TOKENS = 1024
 
+MAX_INPUT_CHARS = int(os.environ.get("MAX_INPUT_CHARS", "2000"))
+RATE_LIMIT_MAX = int(os.environ.get("RATE_LIMIT_MAX", "15"))
+RATE_LIMIT_WINDOW_SEC = int(os.environ.get("RATE_LIMIT_WINDOW_SEC", "300"))
+
 # --- Carga de la base de conocimiento y el system prompt (la "KB" del agente) ---
 SYSTEM_PROMPT = (BASE_DIR / "system_prompt.md").read_text(encoding="utf-8")
 KNOWLEDGE_BASE = (BASE_DIR / "knowledge_base.md").read_text(encoding="utf-8")
@@ -41,6 +56,7 @@ SYSTEM = (
 )
 
 _client = None
+_request_log: dict[str, deque] = defaultdict(deque)
 
 
 def get_client():
@@ -59,13 +75,50 @@ def get_client():
     return _client
 
 
-def respond(message, history):
+def _rate_limited(key: str) -> bool:
+    """True si 'key' ya supero RATE_LIMIT_MAX consultas en la ventana (sliding window)."""
+    now = time.time()
+    dq = _request_log[key]
+    while dq and now - dq[0] > RATE_LIMIT_WINDOW_SEC:
+        dq.popleft()
+    if len(dq) >= RATE_LIMIT_MAX:
+        return True
+    dq.append(now)
+    return False
+
+
+def _client_key(request: gr.Request | None) -> str:
+    """Clave para el rate limit: IP del cliente si esta disponible, si no la sesion, si no global."""
+    if request is not None:
+        host = getattr(getattr(request, "client", None), "host", None)
+        if host:
+            return host
+        sh = getattr(request, "session_hash", None)
+        if sh:
+            return sh
+    return "global"
+
+
+def respond(message, history, request: gr.Request = None):
     """
     message: texto del usuario en este turno.
     history: lista de dicts {'role', 'content'} de la sesion = memoria (RF-02).
+    request: lo inyecta Gradio si esta disponible; se usa para el rate limit por IP.
     """
     if not message or not message.strip():
         return "Escribi tu pregunta sobre 30X y te respondo con los documentos de onboarding."
+
+    if len(message) > MAX_INPUT_CHARS:
+        return (
+            f"Tu mensaje es muy largo (maximo {MAX_INPUT_CHARS} caracteres). "
+            "Resumi tu pregunta sobre 30X y te respondo."
+        )
+
+    if _rate_limited(_client_key(request)):
+        return (
+            "Recibi muchas consultas en poco tiempo. Espera un momento e intenta de nuevo. "
+            "(Limite para proteger el servicio.)"
+        )
 
     messages = [{"role": m["role"], "content": m["content"]} for m in history]
     messages.append({"role": "user", "content": message})
@@ -90,7 +143,6 @@ def respond(message, history):
 
 demo = gr.ChatInterface(
     fn=respond,
-    type="messages",
     title="Agente de Onboarding 30X",
     description=(
         "Preguntá sobre 30X: qué es, el equipo, las herramientas, los programas y tu "
@@ -107,7 +159,6 @@ demo = gr.ChatInterface(
 
 if __name__ == "__main__":
     # server_name 0.0.0.0 + PORT por env => corre en local y en hosts como Render.
-    # (Hugging Face Spaces ejecuta la app sola; estos valores no le molestan.)
     demo.launch(
         server_name="0.0.0.0",
         server_port=int(os.environ.get("PORT", 7860)),
