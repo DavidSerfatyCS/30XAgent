@@ -1,3 +1,14 @@
+---
+title: Agente Onboarding 30X
+emoji: 💬
+colorFrom: blue
+colorTo: indigo
+sdk: gradio
+sdk_version: 6.5.1
+app_file: app.py
+pinned: false
+---
+
 # Agente de Onboarding 30X
 
 Agente conversacional que responde preguntas de personas nuevas en 30X usando **solo** los
@@ -78,6 +89,24 @@ python app.py               # abre el chat en http://localhost:7860
 | `ANTHROPIC_API_KEY` | Sí | Credencial del modelo. **Nunca** se commitea. | — |
 | `MODEL` | No | Id del modelo de Anthropic. | `claude-haiku-4-5-20251001` |
 | `PORT` | No | Puerto del servidor (lo setean hosts como Render). | `7860` |
+| `MAX_INPUT_CHARS` | No | Tope de caracteres por mensaje (corta inputs gigantes). | `2000` |
+| `RATE_LIMIT_MAX` | No | Consultas permitidas por ventana, por IP/sesión. | `15` |
+| `RATE_LIMIT_WINDOW_SEC` | No | Tamaño de la ventana del rate limit, en segundos. | `300` |
+
+## Seguridad y límites de uso
+
+Como es un deploy público con una API key propia, la app incluye guardrails livianos para evitar
+abuso y proteger el gasto (no los pide el brief; se agregaron por criterio):
+
+- **Tope de longitud de entrada** (`MAX_INPUT_CHARS`): los mensajes muy largos se rechazan sin
+  llamar al modelo.
+- **Rate limit por IP/sesión** (`RATE_LIMIT_MAX` por `RATE_LIMIT_WINDOW_SEC`): limita cuántas
+  consultas puede hacer un mismo cliente en una ventana; degrada a un límite global si no hay IP.
+  Es en memoria (se resetea al reiniciar y asume una sola réplica): suficiente para esta demo; a
+  escala iría en un store externo.
+- **`max_tokens` acotado** en cada llamada (límite de costo de salida).
+- **Bloqueo de uso como LLM general**: el system prompt rechaza pedidos ajenos al onboarding
+  (código, traducciones, tareas, etc.), no solo preguntas fuera de dominio.
 
 ## Cómo se actualiza la base de conocimiento (RF-05)
 
