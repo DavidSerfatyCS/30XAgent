@@ -146,8 +146,6 @@ están en `TESTING.md` y se validan en el deploy o local con la key.
 
 ## Limitaciones conocidas
 
-- Las etiquetas estáticas de la interfaz están sin acentos (decisión defensiva por un problema de
-  codificación en el entorno de build); las respuestas del agente sí salen con acentos correctos.
 - La memoria es por sesión: al recargar la página, empieza de cero (es lo que pide el brief).
 - Confidencialidad: un agente público expone el contenido de su KB a quien pregunte. Ver `GAPS.md`.
 

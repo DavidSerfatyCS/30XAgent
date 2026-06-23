@@ -1,0 +1,16 @@
+# Deploy en Render como Web Service. La API key se carga en el dashboard (sync: false),
+# nunca en el repo. Render setea PORT automaticamente; app.py lo lee.
+services:
+  - type: web
+    name: 30x-onboarding-agent
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: MODEL
+        value: claude-haiku-4-5-20251001
+      - key: PYTHON_VERSION
+        value: 3.11.9
