@@ -31,7 +31,7 @@ Un agente conversacional de onboarding para 30X. Responde preguntas de gente nue
 | Retrieval | Full-context (3 docs enteros, sin RAG) | ~17 KB caben; RAG sería sobre-ingeniería y bajaría precisión |
 | Entrenamiento | Ninguno; API + contexto | La inteligencia ya viene en el modelo; actualizar = cambiar texto |
 | Modelo | API comercial, default **Haiku** (env var MODEL) | Tarea fácil; Haiku alcanza; criterio de costo |
-| UI / deploy | Gradio + HF Spaces o Render | Chat+memoria casi gratis; deploy sin instalar nada |
+| UI / deploy | Gradio + HF Spaces | Chat+memoria casi gratis; deploy sin instalar nada |
 | Confidencialidad | PDFs fuera del repo (.gitignore); KB sí se incluye | Deploy se construye desde git; tensión documentada en GAPS |
 | Injertos del plan alt. | anti prompt-injection + TESTING.md + GAPS.md | Lo mejor del plan RAG/Next.js sin su sobre-ingeniería |
 | Tracking | PROCESO + ERRORES + BUILDLOG | Proceso/handoff/video sin sprawl |
@@ -52,7 +52,6 @@ Tech X/
 ├── system_prompt.md           reglas: grounding, escalado, anti-injection
 ├── requirements.txt
 ├── .env.example / .gitignore
-├── render.yaml                deploy en Render
 ├── logo.jpeg                  logo 30X (embebido en la UI como data URI)
 ├── tests/
 │   ├── test_memory.py             memoria + KB en system + modelo default
@@ -86,7 +85,7 @@ Estados: [ ] pendiente · [~] en progreso · [x] hecho · [!] bloqueado
 
 ### Fase 3 — Deploy — [~] (preparado; falta ejecutar)
 - [x] app.py prod-ready: manejo de errores (no stacktrace al usuario), guarda input vacío, server 0.0.0.0 + PORT
-- [x] render.yaml + instrucciones de HF Spaces en README
+- [x] Instrucciones de HF Spaces en README
 - [x] Validación en vivo: 11/11 casos de TESTING.md contra el modelo real (Claude Code, 2026-06-23)
 - [x] Fix: pin gradio>=5,<6 (6.x rompía ChatInterface type=); rename .env.txt -> .env real
 - [x] Space creado, PÚBLICO y en Running (HF Spaces, Gradio 6.5.1); Secret ANTHROPIC_API_KEY cargado
@@ -98,7 +97,7 @@ Estados: [ ] pendiente · [~] en progreso · [x] hecho · [!] bloqueado
 ### Fase 4 — README + repo + commits — [x] (en gran parte)
 - [x] README completo (RF-05: cómo corre, cómo se actualiza la KB, credenciales, deploy, testing, limitaciones)
 - [x] Repo creado y pusheado por Amo; .gitignore deja PDFs y .env afuera
-- [ ] Commit/push de los archivos nuevos de esta sesión (README, tests, render.yaml, VIDEO_SCRIPT, docs)
+- [ ] Commit/push de los archivos nuevos de esta sesión (README, tests, VIDEO_SCRIPT, docs)
 
 ### Fase 5 — Video — [~]
 - [x] Guión borrador humano/creativo (VIDEO_SCRIPT.md), 5 demos marcados

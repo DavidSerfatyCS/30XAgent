@@ -130,7 +130,7 @@
 - El conocimiento vive en `knowledge_base.md`, no en el modelo. Para actualizar: abrir el archivo,
   reemplazar la sección del doc que cambió (DOC1/DOC2/DOC3) conservando las tablas, guardar y
   redeploy (o reiniciar `python app.py`). No se reentrena nada ni se regeneran índices.
-- La API key vive en el host (Secrets de HF Spaces / env var de Render), nunca en el repo.
+- La API key vive en el host (Secrets de HF Spaces), nunca en el repo.
 - Está documentado en el README (sección "Cómo se actualiza la base de conocimiento").
 
 ## 5. Gaps encontrados en los documentos (del análisis)

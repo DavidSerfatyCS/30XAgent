@@ -113,7 +113,7 @@ python app.py               # abre el chat en http://localhost:7860
 |---|---|---|---|
 | `ANTHROPIC_API_KEY` | Sí | Credencial del modelo. **Nunca** se commitea. | — |
 | `MODEL` | No | Id del modelo de Anthropic. | `claude-haiku-4-5-20251001` |
-| `PORT` | No | Puerto del servidor (lo setean hosts como Render). | `7860` |
+| `PORT` | No | Puerto del servidor (lo setean algunos hosts automáticamente). | `7860` |
 | `MAX_INPUT_CHARS` | No | Tope de caracteres por mensaje (corta inputs gigantes). | `2000` |
 | `RATE_LIMIT_MAX` | No | Consultas permitidas por ventana, por IP/sesión. | `15` |
 | `RATE_LIMIT_WINDOW_SEC` | No | Tamaño de la ventana del rate limit, en segundos. | `300` |
