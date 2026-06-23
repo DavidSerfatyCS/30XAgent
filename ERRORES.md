@@ -81,3 +81,61 @@
   + el endurecimiento nuevo. `test_prompt_and_kb.py` y `test_security.py` confirman invariantes.
 - **Aprendizaje:** Los tests de invariantes del prompt deberían chequear TODAS las secciones clave,
   no solo algunas; un archivo de prompt truncado es un fallo silencioso peligroso.
+
+### 2026-06-23 — No pude correr el red-team contra el Space desde el sandbox (403 / egress)
+- **Qué intentábamos:** Manejar el Space con `gradio_client` desde el entorno de Claude para
+  dispararle ~25 preguntas adversariales.
+- **Qué falló / síntoma:** `403 Forbidden` contra `*.hf.space` (la página se lee por GET, pero las
+  llamadas de API se bloquean). No hay navegador Chrome conectado a la cuenta.
+- **Causa raíz:** Egress restringido del entorno automatizado hacia el endpoint de la app.
+- **Cómo lo resolvimos:** Red-team por dos vías alternativas: (a) `redteam.py`, script local que
+  corre el usuario con su key (mismo system + KB + modelo que el deploy) y guarda las respuestas;
+  (b) extensión Claude in Chrome para manejar el navegador. El veredicto de cada respuesta lo pone
+  Claude (comparando contra la KB).
+- **Aprendizaje:** Un entorno automatizado no siempre puede salir a servicios externos; tener un
+  script de prueba reproducible que corra el usuario es un buen fallback.
+
+### 2026-06-23 — Gradio 6 movió `theme` y `css` del constructor de Blocks a `launch()`
+- **Qué intentábamos:** Aplicar tema oscuro + CSS de branding 30X pasándolos a `gr.Blocks(theme=, css=)`.
+- **Qué falló / síntoma:** Warning de Gradio 6 ("parameters moved to launch()") y riesgo de que el
+  branding no se aplicara en HF Spaces, donde la plataforma puede llamar a `launch()` por su cuenta
+  e ignorar nuestros kwargs.
+- **Causa raíz:** Cambio de API en Gradio 6; `theme`/`css` ya no van en el constructor.
+- **Cómo lo resolvimos:** El CSS se inyecta como `<style>` vía `gr.HTML` dentro del Blocks (se
+  renderiza pase lo que pase, verificado en el config), y además se pasa `theme`/`css` a `launch()`
+  para el arranque local. Doble vía = el look no depende de quién llame a launch().
+- **Aprendizaje:** En HF Spaces, no asumir que tu `launch()` corre con tus argumentos; meter el
+  estilo en el árbol de la app lo hace robusto al entorno de deploy.
+
+### 2026-06-23 — `example_icons` con emojis renderizaba imágenes rotas
+- **Qué intentábamos:** Ponerle un ícono a cada tarjeta de pregunta con `example_icons=[emoji, ...]`.
+- **Qué falló / síntoma:** Las tarjetas mostraban el ícono de "imagen rota" + texto cortado.
+- **Causa raíz:** `example_icons` espera rutas/URLs de imagen, no caracteres emoji; Gradio los trata
+  como `src` y falla la carga.
+- **Cómo lo resolvimos:** Quitar `example_icons` (el usuario pidió no complicarse). Tarjetas con solo
+  texto, limpias.
+- **Aprendizaje:** Confirmar el tipo que espera un parámetro de UI antes de asumir que acepta emojis;
+  "ícono" no siempre significa glifo.
+
+### 2026-06-23 — El sandbox corrompió el índice de git al commitear en la carpeta montada
+- **Qué intentábamos:** Hacer los commits de la UI desde el shell del entorno, sobre la carpeta del
+  repo montada desde Windows.
+- **Qué falló / síntoma:** El primer commit (logo) entró, pero después: `Operation not permitted` al
+  tocar `.git/objects` y los locks, `index file corrupt`, y un `index.lock`/`HEAD.lock` que el
+  sandbox no podía borrar.
+- **Causa raíz:** El shell del entorno no tiene permisos completos sobre `.git` en la carpeta montada;
+  escribir objetos/locks de git a través del mount falla a mitad y deja el índice inconsistente.
+- **Cómo lo resolvimos:** No commitear git desde el sandbox. David recupera desde Windows
+  (`del .git\index.lock .git\HEAD.lock .git\index` → `git reset`) y hace los `git add`/`commit` él.
+  El código en disco quedó intacto; era solo metadata de git.
+- **Aprendizaje:** Las operaciones de git sobre la carpeta montada se hacen del lado del usuario
+  (Windows), no desde el sandbox. El entorno escribe archivos de código bien, pero no `.git`.
+
+### 2026-06-23 — `http://0.0.0.0:7860` no abre en el navegador (ERR_ADDRESS_INVALID)
+- **Qué intentábamos:** Abrir la app local tras `python app.py`.
+- **Qué falló / síntoma:** "Hmmm... can't reach this page" en `http://0.0.0.0:7860/`.
+- **Causa raíz:** `0.0.0.0` es la dirección de *escucha* del server (correcta para el deploy), pero
+  no es una dirección navegable desde el cliente.
+- **Cómo lo resolvimos:** Entrar por `http://localhost:7860` (o `127.0.0.1`). No es un bug del código.
+- **Aprendizaje:** `server_name="0.0.0.0"` se queda (lo necesita Render/Spaces); en local se navega
+  por localhost.

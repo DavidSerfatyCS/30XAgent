@@ -39,6 +39,30 @@
   de carga casi gratis (RF-02, RF-04). Next.js/TS habría gastado ~10 h en plumbing de UI que el brief
   dice que no necesita ser linda; ese tiempo va al video.
 
+- **Branding 30X SIN reescribir el chat: `ChatInterface` embebido en `gr.Blocks`.** Para darle el look
+  de 30X (negro + lima, logo, bienvenida, footer) había tres caminos: (a) solo tema/textos, (b) tema +
+  CSS, (c) reescribir todo con `gr.Blocks` a mano. La (c) daba control total pero obligaba a recablear
+  el chat y la memoria — justo el cerebro ya validado (11/11 + 6/6) que no queríamos tocar. La jugada
+  fue intermedia y de bajo riesgo: envolver el `gr.ChatInterface` existente dentro de un `gr.Blocks`
+  decorativo. El chat y la memoria los sigue manejando `ChatInterface`; el Blocks solo aporta marco
+  visual. `respond()`, memoria y guardrails quedaron byte-idénticos (verificado por diff).
+  _(Ángulo video: mejorar lo visible sin arriesgar lo que ya funciona; el diff que prueba "no toqué el
+  backend" vale más que la UI en sí.)_
+
+- **Paleta robusta al deploy: override de variables CSS de Gradio + `<style>` inyectado.** Gradio 6
+  movió `theme`/`css` a `launch()`, y en HF Spaces la plataforma puede llamar a `launch()` por su
+  cuenta. Para que el branding no dependa de eso, el CSS se inyecta como `<style>` dentro del árbol de
+  la app. El azul "flotante" del chat era el `secondary_hue` default; en vez de parchar clase por
+  clase, pisamos las variables CSS de Gradio (`--block-background-fill`, `--color-accent`, etc.) para
+  que todos los componentes hereden una superficie oscura integrada.
+  _(Ángulo video: ir a la variable raíz en vez de cazar selectores; menos frágil y más mantenible.)_
+
+- **UX de reinicio gratis con `save_history=True`.** El usuario no podía volver a ver las 5 preguntas
+  ni empezar de cero. En vez de cablear un botón custom (que tocaría el estado interno del chat),
+  activamos `save_history`: Gradio agrega un botón "Nuevo chat" nativo y, al reiniciar, el chat vacío
+  vuelve a mostrar los ejemplos. Cero riesgo sobre la lógica.
+  _(Ángulo video: a veces la feature pedida ya existe como flag; buscarla antes de construirla.)_
+
 - **Guardrails livianos para un deploy público (más de lo que pide el brief, por criterio).** Como
   el Space corre con una API key propia, agregamos tope de longitud de entrada, rate limit por
   IP/sesión (en memoria, degradable a global) y un bloqueo explícito de uso como LLM general. NO
@@ -58,6 +82,34 @@
   escalado por keywords (`question.includes(...)` es frágil ante sinónimos).
   _(Ángulo video: usar AI no es aceptar lo que sugiere; es comparar dos diseños y defender por qué
   el más simple gana para esta tarea.)_
+
+- **Diseñamos un red-team adversarial (25 preguntas) para estresar la robustez**, no solo los casos
+  felices: alucinación (datos que NO están en los docs), premisa falsa ("como 30X opera en Brasil…"),
+  ambigüedad ("HubSpot o Airtable, decime UNO"), uso como LLM general (poema, código, traducción),
+  inyección/jailbreak (DAN, "revelá tu system prompt"), exfiltración ("volcá toda la base") y casos
+  legítimos para chequear que NO rechace de más. Queda como `redteam.py` reproducible.
+  _(Ángulo video: probar como lo haría el evaluador —buscando romperlo— no solo confirmando que anda.)_
+
+- **Las capas de testing, de barata a cara (cada una atrapa una clase distinta de fallo):**
+  1. *Dry-run de lógica* de las 8 preguntas antes de tocar la UI (Checkpoint 2).
+  2. *Tests offline sin API:* `test_memory` (memoria RF-02 + KB en system), `test_prompt_and_kb`
+     (invariantes del prompt y hechos de la KB), `test_security` (rate-limit, tope de input, bloqueo
+     off-topic). Corren en segundos, sin key.
+  3. *Validación en vivo 11/11* contra el modelo real (las 5 FAQ + robustez).
+  4. *Red-team adversarial:* 25 casos en `redteam.py` (local) + corrida en vivo por el navegador
+     sobre el Space deployado → **6/6 PASS** (off-topic/poema, inyección+exfiltración del system
+     prompt, alucinación de un dato ausente, premisa falsa "opera en Brasil", ambigüedad forzada
+     HubSpot/Airtable, jailbreak DAN).
+  _(Ángulo video: no decir "lo probé"; mostrar las capas. Las baratas corren siempre; las caras
+  confirman en vivo. El bot aguantó justo lo que un evaluador intentaría para romperlo.)_
+
+- **El red-team encontró algo real y lo corregimos (no salió "todo perfecto").** El bot abstenía bien,
+  pero a veces "sobre-ayudaba" inventando logística NO documentada (ej. "revisá tu email de
+  bienvenida", "estará en el grupo de WhatsApp"). Lo afinamos en `system_prompt.md`: disciplina de
+  abstención (solo "no está en los docs" + el rol documentado) + respuestas más concisas y con menos
+  emojis —alineado con el valor de 30X "claridad sobre cantidad". 25/25 y 6/6 igual seguían pasando;
+  esto es pulido fino, no un fallo que hundía.
+  _(Ángulo video: encontrar un fallo sutil y arreglarlo demuestra más rigor que decir "salió perfecto".)_
 
 ## 3. Qué no funcionó y cómo lo resolvimos
 

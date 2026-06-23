@@ -3,8 +3,9 @@
 > Documento maestro y handoff. Quien retome esto (chat nuevo, Codex, o yo) debe poder
 > entender el estado completo leyendo solo este archivo. Se actualiza en CADA paso.
 
-**Última actualización:** 2026-06-23 (noche) — validación en vivo 11/11 (Claude Code), fixes de
-gradio y .env. Pendiente principal: ejecutar el deploy + grabar video.
+**Última actualización:** 2026-06-23 (noche) — UI con branding 30X hecha en branch `feature/ui-30x`
+(sin tocar el cerebro; 3 tests OK). Próximo: que David commitee la UI, mergee a main, grabar video,
+armar el Google Doc final.
 
 ---
 
@@ -76,14 +77,18 @@ Estados: [ ] pendiente · [~] en progreso · [x] hecho · [!] bloqueado
 - [x] tests/test_security.py (rate-limit, input cap, reglas del prompt) — pasa
 - [x] Reparado system_prompt.md (estaba truncado: faltaban Estilo y "Qué NO haces")
 - [x] Batería adversarial S1–S8 documentada en TESTING.md
-- [ ] Red-team en vivo (20–30 preguntas) contra el Space — pendiente, lo corre Claude vía gradio_client
+- [x] Red-team EN VIVO sobre el Space (Claude in Chrome): 6/6 PASS — off-topic, inyección/exfiltración,
+      alucinación, premisa falsa, ambigüedad, jailbreak DAN. El Space en vivo tiene el código reciente.
+- [~] Red-team completo (25) con `redteam.py`: lo corre David local (pendiente: pip install anthropic).
 
 ### Fase 3 — Deploy — [~] (preparado; falta ejecutar)
 - [x] app.py prod-ready: manejo de errores (no stacktrace al usuario), guarda input vacío, server 0.0.0.0 + PORT
 - [x] render.yaml + instrucciones de HF Spaces en README
 - [x] Validación en vivo: 11/11 casos de TESTING.md contra el modelo real (Claude Code, 2026-06-23)
 - [x] Fix: pin gradio>=5,<6 (6.x rompía ChatInterface type=); rename .env.txt -> .env real
-- [ ] Deploy real en host (elegir HF Spaces vs Render) + cargar key en el host
+- [x] Space creado, PÚBLICO y en Running (HF Spaces, Gradio 6.5.1); Secret ANTHROPIC_API_KEY cargado
+- [~] Re-deploy del código más reciente (guardrails + prompt reparado): vía `git push hf main` o re-upload
+      (la versión Running puede ser anterior a los últimos fixes — confirmar)
 - [ ] Verificar acceso sin instalar nada desde otra cuenta
 
 ### Fase 4 — README + repo + commits — [x] (en gran parte)
@@ -98,6 +103,18 @@ Estados: [ ] pendiente · [~] en progreso · [x] hecho · [!] bloqueado
 ### Fase 6 — Empaquetado final — [ ]
 - [ ] Google Doc con los 3 links accesibles sin permiso → Tally
 
+### Fase 7 — Mejoras de UI — [~] (hecha en branch `feature/ui-30x`, falta commit/merge de David)
+- [x] Branding 30X: shell negro + acento lima, logo, título "Agente de Onboarding", tarjeta de
+      bienvenida, footer. `gr.ChatInterface` embebido dentro de `gr.Blocks` (no se reescribió el chat).
+- [x] SIN tocar `respond()`, memoria ni guardrails (verificado por diff + 3 tests pasando).
+- [x] Compatibilidad Gradio 6 + deploy HF Spaces: CSS inyectado como `<style>` (no depende de quién
+      llame a `launch()`); paleta vía override de las variables CSS de Gradio (mata el azul default).
+- [x] UX: `save_history=True` → botón "Nuevo chat" + reaparición de las 5 preguntas al reiniciar.
+- [x] Stubs de gradio extendidos en `test_memory.py` y `test_security.py` para que `import app`
+      siga funcionando con la UI nueva (sin tocar aserciones).
+- [ ] David: `git add app.py tests/ logo.jpeg` + commit en el branch, revisar en local y mergear a main.
+- Nota: el logo va embebido como data URI; `logo.jpeg` debe estar en el repo (se sube al branch).
+
 ## 7. Cómo correr / actualizar / deployar
 
 Todo documentado en `README.md`. Resumen: `pip install -r requirements.txt`, key en `.env`,
@@ -110,10 +127,12 @@ Todo documentado en `README.md`. Resumen: `pip install -r requirements.txt`, key
 3. **Commit/push** de los archivos nuevos de esta sesión (ver comandos que paso aparte).
    - Re-subir al Space (cambiaron desde la última subida): app.py, requirements.txt, system_prompt.md.
    - En el README del Space: sdk_version: 6.5.1.
-4. Respuesta de 30X a las 2 preguntas (Amo las envía): dueño de escalado técnico + quién pone la key.
+4. Correr `redteam.py` (o conectar Claude in Chrome) y pasarme el resultado para el veredicto.
+5. Respuesta de 30X a las 2 preguntas (David las envía): dueño de escalado técnico + quién pone la key.
 
 ## 9. Estado de los tests (todos offline, sin API)
 
 - `tests/test_memory.py` → MEMORY_OK (memoria RF-02 + KB en system RF-01 + default Haiku).
 - `tests/test_prompt_and_kb.py` → INVARIANTS_OK (reglas del prompt + hechos clave de la KB).
-- Casos contra el modelo real (F1–F5 + R1–R6) en TESTING.md: **validados en vivo 11/11** (Claude Code, 2026-06-23).
+- Casos contra el modelo real (F1–F5 + R1–R6) en TESTING.md: **validados en vivo 11/11** (Claude Code).
+- Red-team adversarial en vivo sobre el Space: **6/6 PASS** (Claude in Chrome). 25 casos completos en `redteam.py`.

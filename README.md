@@ -53,6 +53,29 @@ Decisiones clave (el detalle y el "por qué" están en `BUILDLOG.md`):
 - **Modelo barato por defecto (Haiku).** La tarea es fácil para cualquier modelo decente; gastar en
   uno caro no mejora el resultado. Configurable por variable de entorno.
 
+## Interfaz (UI)
+
+La UI lleva el branding de 30X (fondo negro + acento lima, logo, título "Agente de Onboarding",
+tarjeta de bienvenida y footer) **sin reescribir el chat**: el `gr.ChatInterface` —que maneja el
+chat y la memoria de sesión— se embebe dentro de un `gr.Blocks` que solo aporta el marco visual. La
+lógica del agente (`respond()`, memoria, guardrails) no se toca; el branding es 100% presentación.
+
+Decisiones de implementación (el "por qué" está en `BUILDLOG.md`):
+
+- **CSS inyectado como `<style>`** dentro del árbol de la app (no por el parámetro `css=`). En
+  Gradio 6, `theme`/`css` se pasan a `launch()`, pero en HF Spaces la plataforma puede llamar a
+  `launch()` por su cuenta; inyectar el estilo en la app hace que el branding no dependa de eso.
+- **Paleta vía override de las variables CSS de Gradio** (`--block-background-fill`, `--color-accent`,
+  etc.). El azul por defecto venía del `secondary_hue`; pisando las variables, todos los componentes
+  (chat, tarjetas, historial) comparten una superficie oscura integrada.
+- **`save_history=True`**: agrega un botón "Nuevo chat" nativo; al reiniciar, el chat vacío vuelve a
+  mostrar las preguntas frecuentes.
+- **Logo embebido como data URI** desde `logo.jpeg` (debe estar en el repo); si falta, la UI cae a un
+  "30X" en texto y igual carga.
+
+Los tests stubean los componentes de layout de gradio (`Blocks`, `Column`, `HTML`, `Chatbot`,
+`themes`), así que `import app` sigue funcionando sin instalar gradio y sin tocar las aserciones.
+
 ## Estructura del repo
 
 ```
@@ -167,6 +190,7 @@ necesita ninguna credencial.
 
 ```bash
 python tests/test_memory.py          # memoria + KB en system + modelo default
+python tests/test_security.py        # rate-limit, tope de input y bloqueo off-topic
 python tests/test_prompt_and_kb.py   # invariantes del prompt y la KB
 ```
 
