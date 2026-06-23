@@ -85,7 +85,6 @@ Los tests stubean los componentes de layout de gradio (`Blocks`, `Column`, `HTML
 ├── system_prompt.md       # reglas del agente (grounding, escalado, anti prompt-injection)
 ├── requirements.txt
 ├── .env.example           # variables de entorno necesarias (copiar a .env)
-├── render.yaml            # deploy en Render (opcional)
 ├── logo.jpeg              # logo 30X (embebido en la UI como data URI)
 ├── tests/
 │   ├── test_memory.py        # memoria + KB en system + modelo default (sin API)
@@ -170,10 +169,9 @@ prompt" se rechazan. (Caso R6 en `TESTING.md`.)
 
 ## Deploy
 
-El agente necesita estar accesible sin instalar nada. Dos opciones:
-
-**Hugging Face Spaces (recomendado para Gradio).** Creá un Space con SDK = Gradio, subí estos
-archivos y agregá el frontmatter al inicio del README del Space:
+El agente necesita estar accesible sin instalar nada. Está deployado en **Hugging Face Spaces**
+(recomendado para Gradio): se crea un Space con SDK = Gradio, se suben estos archivos y se agrega el
+frontmatter al inicio del README del Space:
 
 ```yaml
 ---
@@ -183,13 +181,9 @@ app_file: app.py
 ---
 ```
 
-Después, en Settings → Secrets del Space, agregá `ANTHROPIC_API_KEY`. El Space corre `app.py` solo.
-
-**Render.** El repo incluye `render.yaml`. Creá un Web Service apuntando al repo; Render lee el
-build/start de ahí. Cargá `ANTHROPIC_API_KEY` como env var en el dashboard (no en el repo).
-
-En ambos casos la key vive en el host, no en GitHub: quien prueba el agente entra por la URL y no
-necesita ninguna credencial.
+Después, en Settings → Secrets del Space, se agrega `ANTHROPIC_API_KEY`. El Space corre `app.py` solo.
+La key vive en el host, no en GitHub: quien prueba el agente entra por la URL y no necesita ninguna
+credencial.
 
 ## Testing
 
