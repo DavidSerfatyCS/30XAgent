@@ -3,9 +3,9 @@
 > Documento maestro y handoff. Quien retome esto (chat nuevo, Codex, o yo) debe poder
 > entender el estado completo leyendo solo este archivo. Se actualiza en CADA paso.
 
-**Última actualización:** 2026-06-23 (noche) — UI con branding 30X hecha en branch `feature/ui-30x`
-(sin tocar el cerebro; 3 tests OK). Próximo: que David commitee la UI, mergee a main, grabar video,
-armar el Google Doc final.
+**Última actualización:** 2026-06-23 (noche) — UI 30X mergeada a main y deployada; Space verificado
+en vivo (carga sin login, topbar OK, responde grounded citando a Andrés Bilbao). El cerebro no se tocó.
+Pendiente: `git push origin main` (GitHub está ~8 commits atrás), grabar el video y armar el Google Doc.
 
 ---
 
@@ -19,8 +19,8 @@ Un agente conversacional de onboarding para 30X. Responde preguntas de gente nue
 
 ## 2. Entregables (lo que se evalúa)
 
-1. Agente funcionando, accesible sin instalar nada (deploy público).  → **validado en vivo 11/11; falta ejecutar el deploy**
-2. Repo GitHub con commits progresivos, README, sin credenciales.     → **repo creado y pusheado; README listo**
+1. Agente funcionando, accesible sin instalar nada (deploy público).  → **HECHO: Space público en HF, verificado en vivo (sin login, responde grounded)**
+2. Repo GitHub con commits progresivos, README, sin credenciales.     → **casi: falta `git push origin main` (local ~8 commits adelante)**
 3. **Video de proceso 5–10 min (el más pesado)**, humano/creativo.    → **guión borrador listo (VIDEO_SCRIPT.md)**
 4. Google Doc con los 3 links accesibles sin permiso → Tally.          → **pendiente (al final)**
 
@@ -53,8 +53,10 @@ Tech X/
 ├── requirements.txt
 ├── .env.example / .gitignore
 ├── render.yaml                deploy en Render
+├── logo.jpeg                  logo 30X (embebido en la UI como data URI)
 ├── tests/
 │   ├── test_memory.py             memoria + KB en system + modelo default
+│   ├── test_security.py           rate-limit, tope de input, bloqueo off-topic
 │   └── test_prompt_and_kb.py      invariantes del prompt y la KB
 ├── README.md                  handoff técnico (RF-05) — completo
 ├── TESTING.md                 casos de prueba
@@ -87,9 +89,10 @@ Estados: [ ] pendiente · [~] en progreso · [x] hecho · [!] bloqueado
 - [x] Validación en vivo: 11/11 casos de TESTING.md contra el modelo real (Claude Code, 2026-06-23)
 - [x] Fix: pin gradio>=5,<6 (6.x rompía ChatInterface type=); rename .env.txt -> .env real
 - [x] Space creado, PÚBLICO y en Running (HF Spaces, Gradio 6.5.1); Secret ANTHROPIC_API_KEY cargado
-- [~] Re-deploy del código más reciente (guardrails + prompt reparado): vía `git push hf main` o re-upload
-      (la versión Running puede ser anterior a los últimos fixes — confirmar)
-- [ ] Verificar acceso sin instalar nada desde otra cuenta
+- [x] Re-deploy del código (UI + guardrails + prompt) al Space vía push a `hf`. Running con lo último.
+- [x] Verificar acceso sin instalar nada: Space abierto sin login (Claude in Chrome), topbar OK y
+      respuesta grounded (citó a Andrés Bilbao). Fix de UI aplicado: `autofocus=False` (la página
+      cargaba scrolleada y tapaba el topbar).
 
 ### Fase 4 — README + repo + commits — [x] (en gran parte)
 - [x] README completo (RF-05: cómo corre, cómo se actualiza la KB, credenciales, deploy, testing, limitaciones)
@@ -112,8 +115,8 @@ Estados: [ ] pendiente · [~] en progreso · [x] hecho · [!] bloqueado
 - [x] UX: `save_history=True` → botón "Nuevo chat" + reaparición de las 5 preguntas al reiniciar.
 - [x] Stubs de gradio extendidos en `test_memory.py` y `test_security.py` para que `import app`
       siga funcionando con la UI nueva (sin tocar aserciones).
-- [ ] David: `git add app.py tests/ logo.jpeg` + commit en el branch, revisar en local y mergear a main.
-- Nota: el logo va embebido como data URI; `logo.jpeg` debe estar en el repo (se sube al branch).
+- [x] Commiteado en `feature/ui-30x`, mergeado a main y pusheado al Space (`hf`). Falta `git push origin main`.
+- Nota: el logo va embebido como data URI; `logo.jpeg` está trackeado en el repo.
 
 ## 7. Cómo correr / actualizar / deployar
 

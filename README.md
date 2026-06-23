@@ -131,6 +131,12 @@ abuso y proteger el gasto (no los pide el brief; se agregaron por criterio):
 - **Bloqueo de uso como LLM general**: el system prompt rechaza pedidos ajenos al onboarding
   (código, traducciones, tareas, etc.), no solo preguntas fuera de dominio.
 
+**Nota para la evaluación:** los guardrails son configurables por variable de entorno. En este deploy
+de evaluación el rate limit está **relajado a propósito** (`RATE_LIMIT_MAX=200` por ventana de 5 min)
+para que el equipo de 30X pueda probar el agente con AI o disparando varios mensajes seguidos sin
+toparse con el límite. En un entorno real se ajustaría más bajo para frenar abuso; el tope de gasto
+real lo da un *spending cap* configurado en la cuenta de Anthropic, no el rate limit.
+
 ## Cómo se actualiza la base de conocimiento (RF-05)
 
 El conocimiento del agente vive en `knowledge_base.md`, **no** dentro del modelo. Para actualizarlo
