@@ -15,7 +15,23 @@ import types
 from pathlib import Path
 
 # --- Stub mínimo de gradio: solo necesitamos que `import gradio` no falle ---
+# Cubre los componentes de layout que usa la UI (Blocks/Column/HTML/Chatbot/themes)
+# para que `import app` funcione sin instalar gradio. NO testea la UI; solo evita
+# que el import explote. Las aserciones del test no dependen de esto.
 _g = types.ModuleType("gradio")
+
+
+class _Ctx:
+    """No-op que sirve como componente y como context manager (Blocks/Column)."""
+
+    def __init__(self, *a, **k):
+        pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
 
 
 class _ChatInterface:
@@ -27,6 +43,15 @@ class _ChatInterface:
 
 
 _g.ChatInterface = _ChatInterface
+_g.Blocks = _Ctx
+_g.Row = _Ctx
+_g.Column = _Ctx
+_g.HTML = _Ctx
+_g.Chatbot = _Ctx
+_g.themes = types.SimpleNamespace(
+    Base=lambda *a, **k: _Ctx(),
+    colors=types.SimpleNamespace(lime="lime", gray="gray"),
+)
 sys.modules["gradio"] = _g
 
 # Importar app desde la raíz del proyecto (carpeta padre de tests/)

@@ -14,7 +14,22 @@ import types
 from pathlib import Path
 
 # Stub minimo de gradio (no instalamos la lib para el test).
+# Cubre los componentes de layout que usa la UI (Blocks/Column/HTML/Chatbot/themes)
+# para que `import app` funcione sin gradio instalado. NO testea la UI.
 _g = types.ModuleType("gradio")
+
+
+class _Ctx:
+    """No-op que sirve como componente y como context manager (Blocks/Column)."""
+
+    def __init__(self, *a, **k):
+        pass
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
 
 
 class _ChatInterface:
@@ -26,6 +41,15 @@ class _ChatInterface:
 
 
 _g.ChatInterface = _ChatInterface
+_g.Blocks = _Ctx
+_g.Row = _Ctx
+_g.Column = _Ctx
+_g.HTML = _Ctx
+_g.Chatbot = _Ctx
+_g.themes = types.SimpleNamespace(
+    Base=lambda *a, **k: _Ctx(),
+    colors=types.SimpleNamespace(lime="lime", gray="gray"),
+)
 
 
 class _Request:  # placeholder; app solo lo usa en anotaciones (string) y en runtime opcional

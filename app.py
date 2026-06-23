@@ -22,6 +22,7 @@ Config por variables de entorno (ver .env.example):
 
 from __future__ import annotations
 
+import base64
 import os
 import time
 from collections import defaultdict, deque
@@ -141,25 +142,161 @@ def respond(message, history, request: gr.Request = None):
         )
 
 
-demo = gr.ChatInterface(
-    fn=respond,
-    title="Agente de Onboarding 30X",
-    description=(
-        "Preguntá sobre 30X: qué es, el equipo, las herramientas, los programas y tu "
-        "primera semana. Responde solo con los documentos internos de onboarding."
-    ),
-    examples=[
-        "¿Qué es 30X y quiénes lo fundaron?",
-        "¿Qué herramientas usa el equipo y para qué sirve cada una?",
-        "Acabo de entrar, ¿qué se espera de mí esta primera semana?",
-        "¿Cómo funciona una cohorte online de principio a fin?",
-        "¿A quién le escribo si tengo un bloqueo técnico?",
-    ],
+# ============================================================================
+# Interfaz (UI). SOLO presentacion: no cambia respond(), la memoria ni los
+# guardrails. El gr.ChatInterface sigue manejando el chat y la memoria de
+# sesion; se embebe dentro de un gr.Blocks que aporta el branding 30X
+# (negro + lima). El CSS se inyecta como <style> (robusto en HF Spaces, sin
+# depender de quien llame a launch()).
+# ============================================================================
+
+EXAMPLES = [
+    "¿Qué es 30X y quiénes lo fundaron?",
+    "¿Qué herramientas usa el equipo y para qué sirve cada una?",
+    "Acabo de entrar, ¿qué se espera de mí esta primera semana?",
+    "¿Cómo funciona una cohorte online de principio a fin?",
+    "¿A quién le escribo si tengo un bloqueo técnico?",
+]
+
+ACCENT = "#c6f432"
+
+
+def _logo_data_uri() -> str:
+    """Logo 30X como data URI; si falta el archivo, la UI igual carga."""
+    try:
+        raw = (BASE_DIR / "logo.jpeg").read_bytes()
+        return "data:image/jpeg;base64," + base64.b64encode(raw).decode()
+    except Exception:  # noqa: BLE001
+        return ""
+
+
+LOGO_URI = _logo_data_uri()
+LOGO_PATH = str(BASE_DIR / "logo.jpeg") if LOGO_URI else None
+
+CSS = """
+:root {
+  --ob-bg:#0a0a0a; --ob-panel:#161616; --ob-border:#2a2a2a;
+  --ob-acc:__ACCENT__; --ob-text:#ededed; --ob-muted:#9a9a9a;
+}
+gradio-app, .gradio-container {
+  background:var(--ob-bg) !important; color:var(--ob-text) !important;
+  max-width:100% !important; padding:0 !important;
+}
+footer { display:none !important; }
+
+#ob-topbar {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 28px; border-bottom:1px solid var(--ob-border); background:#000;
+}
+#ob-topbar img.ob-logo { height:28px; display:block; }
+#ob-topbar span.ob-logo { font-weight:800; font-size:22px; letter-spacing:1px; }
+#ob-topbar span.ob-logo b { color:var(--ob-acc); }
+#ob-topbar .ob-pill {
+  font-size:12px; color:var(--ob-acc); border:1px solid var(--ob-border);
+  border-radius:999px; padding:6px 12px; display:inline-flex; gap:8px; align-items:center;
+}
+#ob-topbar .ob-pill::before {
+  content:""; width:7px; height:7px; border-radius:50%; background:var(--ob-acc);
+}
+
+#ob-main { max-width:960px; margin:0 auto; padding:20px 20px 40px; }
+
+.ob-welcome {
+  background:var(--ob-panel); border:1px solid var(--ob-border);
+  border-radius:16px; padding:22px 24px; margin:6px 0 12px;
+}
+.ob-welcome h2 { margin:0 0 6px; font-size:22px; color:var(--ob-text); }
+.ob-welcome p { margin:4px 0; color:#d6d6d6; }
+.ob-welcome ul { list-style:none; padding:0; margin:12px 0 4px; }
+.ob-welcome li { padding:5px 0 5px 26px; position:relative; color:#d6d6d6; }
+.ob-welcome li::before {
+  content:"✓"; color:var(--ob-acc); position:absolute; left:0; font-weight:700;
+}
+.ob-welcome .ob-muted { color:var(--ob-muted); font-size:14px; margin-top:10px; }
+
+#ob-main textarea, #ob-main input[type=text] {
+  background:#121212 !important; color:var(--ob-text) !important;
+  border:1px solid var(--ob-border) !important; border-radius:12px !important;
+}
+#ob-main button.primary, #ob-main .primary {
+  background:var(--ob-acc) !important; color:#000 !important;
+  border:none !important; font-weight:600 !important;
+}
+#ob-main .examples button, #ob-main .example {
+  background:var(--ob-panel) !important; border:1px solid var(--ob-border) !important;
+  color:var(--ob-text) !important; border-radius:14px !important; text-align:left !important;
+}
+#ob-main .examples button:hover, #ob-main .example:hover {
+  border-color:var(--ob-acc) !important;
+}
+
+#ob-footer {
+  text-align:center; color:var(--ob-muted); font-size:13px;
+  padding:18px; border-top:1px solid var(--ob-border);
+}
+#ob-footer b { color:var(--ob-text); }
+""".replace("__ACCENT__", ACCENT)
+
+_logo_html = (
+    f'<img class="ob-logo" src="{LOGO_URI}" alt="30X">'
+    if LOGO_URI
+    else '<span class="ob-logo">30<b>X</b></span>'
 )
+TOPBAR = (
+    '<div id="ob-topbar">'
+    f"{_logo_html}"
+    '<span class="ob-pill">Responde solo con documentos internos</span>'
+    "</div>"
+)
+
+WELCOME = (
+    '<div class="ob-welcome">'
+    "<h2>Bienvenido al equipo de 30X \U0001f44b</h2>"
+    "<p>Soy tu agente de onboarding. Te ayudo a entender cómo funciona 30X desde el día uno:</p>"
+    "<ul>"
+    "<li>La organización y cómo trabajamos.</li>"
+    "<li>Las herramientas que usás cada día.</li>"
+    "<li>Los programas y qué esperar en tu primera semana.</li>"
+    "</ul>"
+    '<p class="ob-muted">Probá una de las preguntas frecuentes o escribime lo que necesites. '
+    "Si algo no está en los documentos, te lo digo.</p>"
+    "</div>"
+)
+
+FOOTER = (
+    '<div id="ob-footer"><b>30X</b> · onboarding interno · '
+    "responde solo con documentos internos</div>"
+)
+
+THEME = gr.themes.Base(
+    primary_hue=gr.themes.colors.lime,
+    neutral_hue=gr.themes.colors.gray,
+)
+
+with gr.Blocks(title="Agente de Onboarding 30X") as demo:
+    gr.HTML(f"<style>{CSS}</style>")
+    gr.HTML(TOPBAR)
+    with gr.Column(elem_id="ob-main"):
+        gr.HTML(WELCOME)
+        chatbot = gr.Chatbot(
+            height=460,
+            show_label=False,
+            avatar_images=(None, LOGO_PATH),
+        )
+        gr.ChatInterface(
+            fn=respond,
+            chatbot=chatbot,
+            examples=EXAMPLES,
+        )
+    gr.HTML(FOOTER)
 
 if __name__ == "__main__":
     # server_name 0.0.0.0 + PORT por env => corre en local y en hosts como Render.
+    # theme/css van en launch() (Gradio 6 los movio ahi); el CSS ademas va como
+    # <style> arriba, asi el branding no depende de quien llame a launch().
     demo.launch(
         server_name="0.0.0.0",
         server_port=int(os.environ.get("PORT", 7860)),
+        theme=THEME,
+        css=CSS,
     )
