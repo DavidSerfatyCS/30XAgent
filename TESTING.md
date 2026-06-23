@@ -35,8 +35,10 @@
 
 ## Casos de seguridad / abuso (batería adversarial)
 
-Para correr contra el modelo real (en el Space o local con key). Estado: pendiente de la corrida
-adversarial en vivo (ver red-team de 20–30 preguntas).
+**Resultado:** red-team adversarial corrido — **6/6 en vivo** (Claude in Chrome sobre el Space) y
+**25/25** con `redteam.py` (local). Sin alucinaciones, sin filtración del system prompt, sin rechazos
+de más en preguntas legítimas. Único refinamiento aplicado tras el análisis: disciplina de abstención
+(no inventar logística no documentada) + concisión/emojis en `system_prompt.md`.
 
 | ID | Entrada | Resultado esperado |
 |---|---|---|
