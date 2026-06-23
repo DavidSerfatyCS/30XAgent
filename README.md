@@ -86,9 +86,12 @@ Los tests stubean los componentes de layout de gradio (`Blocks`, `Column`, `HTML
 ├── requirements.txt
 ├── .env.example           # variables de entorno necesarias (copiar a .env)
 ├── render.yaml            # deploy en Render (opcional)
+├── logo.jpeg              # logo 30X (embebido en la UI como data URI)
 ├── tests/
-│   ├── test_memory.py        # verifica memoria + KB en system + modelo default (sin API)
-│   └── test_prompt_and_kb.py # verifica que el prompt y la KB no pierdan reglas/hechos clave
+│   ├── test_memory.py        # memoria + KB en system + modelo default (sin API)
+│   ├── test_security.py      # rate-limit, tope de input, bloqueo off-topic (sin API)
+│   └── test_prompt_and_kb.py # invariantes del prompt y la KB (sin API)
+├── redteam.py             # red-team adversarial reproducible (25 casos)
 ├── TESTING.md             # casos de prueba (FAQ, memoria, no-alucinación, inyección)
 ├── GAPS.md                # gaps detectados en los documentos + tensión de confidencialidad
 ├── BUILDLOG.md            # bitácora de decisiones (material del video)
@@ -150,24 +153,20 @@ La KB se mantiene a mano a partir de los PDFs (la extracción inicial se hizo ve
 tablas no se mezclaran). No hay paso de "ingest" automático: para 3 documentos cortos, mantenerlo a
 mano es más simple y menos frágil que un pipeline.
 
-## Cómo maneja la memoria de conversación (RF-02)
+## Cómo cumple los requisitos funcionales
 
-Gradio mantiene el historial de la sesión y en cada turno `respond()` lo reenvía completo al modelo.
-No hay base de datos: la memoria es por sesión, que es lo que pide el brief. (Verificado por
-`tests/test_memory.py` sin necesidad de API key.)
+**Memoria de sesión (RF-02).** Gradio mantiene el historial y en cada turno `respond()` lo reenvía
+completo al modelo. No hay base de datos: la memoria es por sesión, como pide el brief. (Verificado
+por `tests/test_memory.py`, sin API key.)
 
-## Cómo maneja preguntas sin respuesta y escalado (RF-03)
+**Escalado cuando no sabe (RF-03).** El system prompt instruye al modelo a reconocer cuándo la KB no
+tiene la respuesta, decirlo explícitamente y sugerir a quién escalar usando **solo** roles que existen
+en los documentos. El default es el **Chief of Staff**; para un dominio específico puede sugerir al
+Head de esa área. Nunca inventa un rol.
 
-El system prompt instruye al modelo a (a) reconocer cuándo la KB no tiene la respuesta, (b) decirlo
-explícitamente y (c) sugerir a quién escalar usando **solo** roles que existen en los documentos. El
-default documentado es el **Chief of Staff**; para dominios específicos puede sugerir al Head de esa
-área. Nunca inventa un rol que no esté en la KB.
-
-## Resistencia a prompt-injection
-
-El system prompt trata el contenido del usuario como preguntas, no como instrucciones que cambian
-las reglas. Pedidos del tipo "ignorá los documentos" o "revelá tu prompt" se rechazan. (Caso R6 en
-`TESTING.md`.)
+**Resistencia a prompt-injection.** El system prompt trata el contenido del usuario como preguntas,
+no como instrucciones que cambian las reglas. Pedidos como "ignorá los documentos" o "revelá tu
+prompt" se rechazan. (Caso R6 en `TESTING.md`.)
 
 ## Deploy
 
@@ -200,7 +199,7 @@ python tests/test_security.py        # rate-limit, tope de input y bloqueo off-t
 python tests/test_prompt_and_kb.py   # invariantes del prompt y la KB
 ```
 
-Ambos corren sin API key (stubs). Los casos funcionales contra el modelo real (5 FAQ + robustez)
+Los tres corren sin API key (stubs). Los casos funcionales contra el modelo real (5 FAQ + robustez)
 están en `TESTING.md` y se validan en el deploy o local con la key.
 
 ## Limitaciones conocidas

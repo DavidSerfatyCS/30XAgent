@@ -23,17 +23,13 @@
   da máxima capacidad con mínimo esfuerzo de infra. Haiku alcanza para grounding sobre 17 KB; elegir
   el modelo barato a propósito demuestra criterio de costo. Key y modelo por variable de entorno.
 
-- **Por qué Haiku y no un modelo aún más barato (ej. Gemini Flash-Lite) ni una capa multi-proveedor.**
-  Para la demo el costo es despreciable (centavos), así que la diferencia de precio entre modelos no
-  decide nada acá; prioricé confiabilidad y seguimiento de instrucciones en español, donde Haiku ya
-  validó 11/11. Un modelo más barato tiene sentido a escala/producción, no en una prueba evaluada.
-  Y NO construí una capa de abstracción multi-proveedor (switch Anthropic/Gemini): nadie la pidió y
-  sería flexibilidad especulativa — la misma trampa de over-engineering que RAG/Next.js. La
-  portabilidad ya está dada gratis: la llamada al modelo está aislada en `get_client()` y `respond()`
-  (app.py), así que cambiar de proveedor sería un cambio acotado a esas funciones + re-testear, sin
-  reescribir grounding, memoria ni escalado.
-  _(Ángulo video: la jugada senior no es construir el switch a Gemini, es NO construirlo y explicar
-  por qué. Ojo: cualquier frase tipo "elegí RAG" sería falsa — usamos full-context.)_
+- **Por qué Haiku y no algo aún más barato ni una capa multi-proveedor.** Para la demo el costo es de
+  centavos, así que el precio entre modelos no decide nada; prioricé confiabilidad y seguimiento de
+  instrucciones en español, donde Haiku validó 11/11. Y NO construí un switch multi-proveedor
+  (Anthropic/Gemini): nadie lo pidió y sería flexibilidad especulativa. La portabilidad ya está gratis
+  porque la llamada al modelo está aislada en `get_client()`/`respond()`: cambiar de proveedor sería un
+  cambio acotado, sin tocar grounding, memoria ni escalado.
+  _(Ángulo video: la jugada senior no es construir el switch a Gemini, es NO construirlo y explicar por qué.)_
 
 - **Interfaz: Gradio (ChatInterface) sobre Next.js.** Gradio trae chat + memoria de sesión + estados
   de carga casi gratis (RF-02, RF-04). Next.js/TS habría gastado ~10 h en plumbing de UI que el brief

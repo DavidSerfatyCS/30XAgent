@@ -58,6 +58,7 @@ Tech X/
 │   ├── test_memory.py             memoria + KB en system + modelo default
 │   ├── test_security.py           rate-limit, tope de input, bloqueo off-topic
 │   └── test_prompt_and_kb.py      invariantes del prompt y la KB
+├── redteam.py                 red-team adversarial reproducible (25 casos)
 ├── README.md                  handoff técnico (RF-05) — completo
 ├── TESTING.md                 casos de prueba
 ├── GAPS.md                    gaps + tensión confidencialidad (entregable)
@@ -123,15 +124,12 @@ Estados: [ ] pendiente · [~] en progreso · [x] hecho · [!] bloqueado
 Todo documentado en `README.md`. Resumen: `pip install -r requirements.txt`, key en `.env`,
 `python app.py`. Actualizar KB = editar `knowledge_base.md` y redeploy (sin reentrenar).
 
-## 8. Qué necesito de David para destrabar (en orden)
+## 8. Qué falta para cerrar (en orden)
 
-1. **API key de Anthropic** cargada en el host (no en el repo) — destraba deploy y test en vivo.
-2. **Elegir host:** Hugging Face Spaces (recomendado para Gradio) o Render (hay render.yaml).
-3. **Commit/push** de los archivos nuevos de esta sesión (ver comandos que paso aparte).
-   - Re-subir al Space (cambiaron desde la última subida): app.py, requirements.txt, system_prompt.md.
-   - En el README del Space: sdk_version: 6.5.1.
-4. Correr `redteam.py` (o conectar Claude in Chrome) y pasarme el resultado para el veredicto.
-5. Respuesta de 30X a las 2 preguntas (David las envía): dueño de escalado técnico + quién pone la key.
+1. **`git push origin main`** — GitHub está ~8 commits atrás del local (UI y docs ya commiteados; el Space `hf` ya está al día).
+2. **Spending cap en la cuenta de Anthropic** — red de seguridad real del gasto (el rate limit ya está relajado a 200 para la evaluación).
+3. **Grabar el video** (5–10 min) — guión en `VIDEO_SCRIPT.md`; el agente ya está deployado para las demos.
+4. **Google Doc con los 3 links** (agente + repo + video) accesibles sin permiso → subir a Tally.
 
 ## 9. Estado de los tests (todos offline, sin API)
 

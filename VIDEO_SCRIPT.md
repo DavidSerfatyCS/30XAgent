@@ -21,38 +21,25 @@ de contacto para esa persona nueva — y que responde solo con los documentos in
 
 ### 0:45–2:30 · Las decisiones de arquitectura y POR QUÉ
 El corazón del video. Mostrá criterio, no herramientas.
-- **No usé RAG.** "Lo primero que muchos harían es chunking + embeddings + vector DB. Yo medí: los
-  3 documentos juntos son 17 KB. Caben enteros en el contexto del modelo. Meter RAG ahí no solo es
-  sobre-ingeniería: *aumenta* el riesgo de que el agente diga 'no sé' sobre algo que sí está, porque
-  el retrieval puede traer el chunk equivocado. Pasar todo el contenido es más simple y más
-  confiable." [mostrá knowledge_base.md y system_prompt.md]
+
+- **No usé RAG — full-context.** "Lo primero que muchos harían es chunking + embeddings + vector DB.
+  Yo medí: los 3 documentos juntos son ~17 KB, entran de sobra en el contexto. Con tan poco, RAG no
+  suma precisión: suma un punto de falla, porque si el retriever no trae el fragmento correcto, el
+  agente diría 'no sé' sobre algo que sí está. Full-context elimina ese riesgo y es lo más simple de
+  defender en 48 h. La contra, dicha de frente: no escala —el costo crece con cada documento y cada
+  mensaje—; si 30X sumara muchos docs o conectara Notion/Drive, ahí sí migraría a RAG. Hoy sería
+  resolver un problema que el proyecto no tiene." [mostrá knowledge_base.md y system_prompt.md]
 - **No entrené un modelo.** "La inteligencia ya viene en el modelo. Lo que no sabe es la info privada
   de 30X — y eso no se arregla entrenando, se arregla dándole los documentos en el contexto. Bonus:
   actualizar un documento es cambiar un archivo de texto, no reentrenar."
 - **Modelo barato a propósito (Haiku).** "Para 'buscá en estos docs y si no está, decilo', Haiku
-  alcanza. Gastar en Opus sería un cañón para una mosca. Elegir el modelo barato es criterio de
-  costo, no falta de recursos."
+  alcanza. Opus sería un cañón para una mosca. Es criterio de costo, no falta de recursos."
 
-**Párrafo pulido — full-context vs RAG (para decirlo casi tal cual):**
-"Para esta versión elegí pasar los tres documentos completos al modelo en cada consulta
-—full-context— en vez de montar un RAG con embeddings. El motivo es el tamaño: los tres PDFs juntos
-son ~17 KB, entran de sobra en el contexto. Con tan poco, RAG no suma precisión: suma un punto de
-falla, porque si el retriever no trae el fragmento correcto, el agente diría 'no sé' sobre algo que
-sí está en los documentos. Full-context elimina ese riesgo y es lo más simple de defender en 48
-horas. La contra, y la digo de frente: no escala —el costo crece con cada documento y cada mensaje.
-Por eso, si 30X sumara muchos más documentos, conectara Notion o Drive, o necesitara que distintos
-usuarios vean distinta documentación, ahí migraría a RAG. Hoy no hace falta, y construirlo ahora
-sería resolver un problema que el proyecto todavía no tiene."
-
-Cuándo migraría a RAG (lista corta, por si lo preguntan):
-- La base pasa de 3 a ~10+ documentos, o el contexto se vuelve caro/lento.
-- Hay que conectar fuentes externas (Notion, Drive, SOPs, políticas internas).
-- Distintos usuarios deben ver distinta documentación (control de acceso por usuario).
-- El volumen de mensajes hace que el costo por token empiece a pesar.
-
-Nota honesta para no contradecir el código: la migración NO está pre-construida. Lo que la hace
-barata es que la KB (knowledge_base.md) está desacoplada del resto, así que pasar a RAG cambia cómo
-se alimenta esa KB, sin tocar grounding, memoria ni escalado.
+Cuándo migraría a RAG (lista corta, por si lo preguntan): la base pasa de 3 a ~10+ docs; hay que
+conectar fuentes externas (Notion, Drive); distintos usuarios deben ver distinta documentación; o el
+volumen de mensajes hace pesar el costo por token. La migración no está pre-construida, pero la KB
+(`knowledge_base.md`) está desacoplada, así que pasar a RAG cambia cómo se alimenta esa KB sin tocar
+grounding, memoria ni escalado.
 
 ### 2:30–3:30 · Cómo usé AI para construir (meta, y honesto)
 "30X es AI-first, así que esto importa. No solo le pedí código a un modelo: generé un plan
