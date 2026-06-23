@@ -103,7 +103,7 @@ Estados: [ ] pendiente · [~] en progreso · [x] hecho · [!] bloqueado
 Todo documentado en `README.md`. Resumen: `pip install -r requirements.txt`, key en `.env`,
 `python app.py`. Actualizar KB = editar `knowledge_base.md` y redeploy (sin reentrenar).
 
-## 8. Qué necesito de Amo para destrabar (en orden)
+## 8. Qué necesito de David para destrabar (en orden)
 
 1. **API key de Anthropic** cargada en el host (no en el repo) — destraba deploy y test en vivo.
 2. **Elegir host:** Hugging Face Spaces (recomendado para Gradio) o Render (hay render.yaml).
