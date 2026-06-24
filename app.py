@@ -130,7 +130,13 @@ def respond(message, history, request: gr.Request = None):
         resp = client.messages.create(
             model=model,
             max_tokens=MAX_TOKENS,
-            system=SYSTEM,
+            # Prompt caching: el bloque `system` (system_prompt + KB, ~4.7k tokens) es
+            # identico en cada llamada, asi que se cachea como prefijo. Los reusos pagan
+            # ~10% del precio de entrada de esos tokens. El contenido es byte-identico al
+            # de antes: NO cambia la respuesta del modelo ni el grounding, solo el costo.
+            # Nota: Haiku 4.5 exige >=4096 tokens para cachear; si la KB se recorta por
+            # debajo de ese umbral, el cache deja de aplicar en silencio (sin error).
+            system=[{"type": "text", "text": SYSTEM, "cache_control": {"type": "ephemeral"}}],
             messages=messages,
         )
         return resp.content[0].text

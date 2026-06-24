@@ -96,8 +96,11 @@ def run():
     assert out == "respuesta-de-prueba", out
     assert msgs[0]["content"] == "Soy del área comercial", "no reenvió la memoria (RF-02)"
     assert msgs[-1]["content"] == "¿qué herramientas uso?", "no agregó el turno actual"
-    assert "BASE DE CONOCIMIENTO" in captured["system"], "la KB no va en el system (RF-01)"
-    assert "Chief of Staff" in captured["system"], "falta contenido de la KB"
+    # `system` es una lista de bloques (prompt caching): el texto vive en el bloque cacheable.
+    system_text = captured["system"][0]["text"]
+    assert captured["system"][0]["cache_control"]["type"] == "ephemeral", "falta cache_control en el system"
+    assert "BASE DE CONOCIMIENTO" in system_text, "la KB no va en el system (RF-01)"
+    assert "Chief of Staff" in system_text, "falta contenido de la KB"
     assert "haiku" in captured["model"].lower(), captured["model"]
     print("MEMORY_OK | turnos enviados:", len(msgs), "| modelo:", captured["model"])
 
